@@ -11,5 +11,6 @@ yarn dev
 
 Or run on other ports:
 ```
+yarn build
 yarn start --port 3001
 ```
