@@ -64,7 +64,6 @@ const Index = (props) => {
   } = props
 
   const router = useRouter()
-  console.log(router.query)
 
   const Web3 = require('web3');
   var ethereum, web3; /* XXX */
@@ -76,6 +75,9 @@ const Index = (props) => {
   const classes = useStyles()
   const tokenOptions = [ { code: 'DAI' }, { code: 'UNI' }, { code: 'WETH' } ]
   const merchantAccepts = _validateTokensMerchantAccepts(router.query)
+
+  const [chosenMerchantToken, setChosenMerchantToken] = useState('DAI')
+  const [chosenMerchantTokenAmount, setChosenMerchantTokenAmount] = useState(0)
 
   const componentDidMount = () => {
     ethereum = window.ethereum; /* XXX */
@@ -131,6 +133,14 @@ const Index = (props) => {
       .catch((error) => console.error);
   }
 
+  function handleChangeAccepts(e) {
+      e.preventDefault()
+      const sym = e.target.innerText
+      setChosenMerchantToken(sym)
+      setChosenMerchantTokenAmount(merchantAccepts.find(x => x.code === sym).amount)
+  }
+
+
   return (
     <Card className={classes.card}>
       <CardContent>
@@ -157,7 +167,7 @@ const Index = (props) => {
                 id="combo-box-demo"
                 options={tokenOptions}
                 getOptionLabel={(option) => option.code}
-                style={{ width: 150 }}
+                style={{ width: 250 }}
                 renderInput={(params) => <TextField {...params} label="Token box" variant="outlined" />}
               />
             </Grid>
@@ -166,10 +176,10 @@ const Index = (props) => {
         </Container>
          <Container>
           <Grid container space={3}>
-            <Grid item xs={3}><TextField id="standard-basic" label="Receives" /></Grid>
+            <Grid item xs={3}><TextField id="standard-basic" label="Receives" value={chosenMerchantTokenAmount} /></Grid>
             <Grid item xs={3}>
             <Button variant="contained" color="primary">
-                UNI
+                {chosenMerchantToken}
       <svg width="12" height="7" viewcontainer="0 0 12 7" fill="none" ><path d="M0.97168 1L6.20532 6L11.439 1" stroke="#AEAEAE"></path></svg>
             </Button>
             </Grid>
@@ -178,7 +188,9 @@ const Index = (props) => {
                 id="combo-box-demo"
                 options={merchantAccepts}
                 getOptionLabel={(option) => option.code}
-                style={{ width: 150 }}
+                getOptionSelected={(option, value) => option.code === value.code}
+                onChange={handleChangeAccepts}
+                style={{ width: 250 }}
                 renderInput={(params) => <TextField {...params} label="Token Merchant Accepts" variant="outlined" />}
               />
             </Grid>
