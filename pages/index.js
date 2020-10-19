@@ -57,6 +57,20 @@ const Index = (props) => {
           setSenderBal(await web3.eth.getBalance(accounts[0]));
           setReceiverBal(await web3.eth.getBalance(receiver));
         });
+        
+        // wrote this code in a reagular react app and was able to get the list of accepted 0x API tokens in console
+        // Was unable to get this to show the list in this file, not sure how the index file is used
+        // let usableTokens = []
+        // const defaultOption = usableTokens[0];
+        // var url = 'https://api.0x.org/swap/v1/tokens'
+        // fetch(url).then((response) => response.json())
+        //           .then(function(data) { 
+        //             data.records.forEach(element => {
+        //               usableTokens.push(element.symbol)
+        //             })
+        //           console.log(usableTokens)})
+        //           .catch((error) => console.log(error));
+
       } catch {
         console.log("User denied account access");
       }
