@@ -17,6 +17,8 @@ import Grid from '@material-ui/core/Grid'
 import Container from '@material-ui/core/Container'
 import Autocomplete from '@material-ui/lab/Autocomplete'
 
+import { useRouter } from 'next/router'
+
 const useStyles = makeStyles({
   container: {
     display: 'flex',
@@ -27,7 +29,32 @@ const useStyles = makeStyles({
   }
 })
 
+function _isNumericString(s) {
+    return parseFloat(s) == s // XXX quickie
+}
 
+// pass in whole query object where .accepts is one member.
+// returns [] on error.
+// returns [{code: 'WETH', amount: 1.5}, {code: 'USDC', amount: 420.1}, ...]
+function _validateTokensMerchantAccepts(query) {
+  if (typeof query.accepts === 'undefined') {
+    console.log('missing accepts')
+    return []
+  }
+
+  if (query.accepts.filter(s => s.indexOf(':') == -1).length > 0) {
+    console.log('token:amount missing the :')
+    return []
+  }
+
+  let tokens = query.accepts.map(x => x.split(':'))
+  if (tokens.filter(x => ! _isNumericString(x[1])).length > 0) {
+    console.log(':amount was not numeric enough')
+    return []
+  }
+  tokens = tokens.map(t => ({ code: t[0], amount: parseFloat(t[1]) }))
+  return tokens
+}
 
 const Index = (props) => {
   const {
@@ -35,6 +62,8 @@ const Index = (props) => {
     increment,
     decrement
   } = props
+
+  const router = useRouter()
 
   const Web3 = require('web3');
   var ethereum, web3; /* XXX */
@@ -45,6 +74,10 @@ const Index = (props) => {
 
   const classes = useStyles()
   const tokenOptions = [ { code: 'DAI' }, { code: 'UNI' }, { code: 'WETH' } ]
+  const merchantAccepts = _validateTokensMerchantAccepts(router.query)
+
+  const [chosenMerchantToken, setChosenMerchantToken] = useState('DAI')
+  const [chosenMerchantTokenAmount, setChosenMerchantTokenAmount] = useState(0)
 
   const componentDidMount = () => {
     ethereum = window.ethereum; /* XXX */
@@ -114,6 +147,14 @@ const Index = (props) => {
       .catch((error) => console.error);
   }
 
+  function handleChangeAccepts(e) {
+      e.preventDefault()
+      const sym = e.target.innerText
+      setChosenMerchantToken(sym)
+      setChosenMerchantTokenAmount(merchantAccepts.find(x => x.code === sym).amount)
+  }
+
+
   return (
     <Card className={classes.card}>
       <CardContent>
@@ -140,7 +181,7 @@ const Index = (props) => {
                 id="combo-box-demo"
                 options={tokenOptions}
                 getOptionLabel={(option) => option.code}
-                style={{ width: 150 }}
+                style={{ width: 250 }}
                 renderInput={(params) => <TextField {...params} label="Token box" variant="outlined" />}
               />
             </Grid>
@@ -149,20 +190,22 @@ const Index = (props) => {
         </Container>
          <Container>
           <Grid container space={3}>
-            <Grid item xs={3}><TextField id="standard-basic" label="Receives" /></Grid>
+            <Grid item xs={3}><TextField id="standard-basic" label="Receives" value={chosenMerchantTokenAmount} /></Grid>
             <Grid item xs={3}>
             <Button variant="contained" color="primary">
-                UNI
+                {chosenMerchantToken}
       <svg width="12" height="7" viewcontainer="0 0 12 7" fill="none" ><path d="M0.97168 1L6.20532 6L11.439 1" stroke="#AEAEAE"></path></svg>
             </Button>
             </Grid>
             <Grid item xs={3}>
               <Autocomplete
                 id="combo-box-demo"
-                options={tokenOptions}
+                options={merchantAccepts}
                 getOptionLabel={(option) => option.code}
-                style={{ width: 150 }}
-                renderInput={(params) => <TextField {...params} label="Pay Token" variant="outlined" />}
+                getOptionSelected={(option, value) => option.code === value.code}
+                onChange={handleChangeAccepts}
+                style={{ width: 250 }}
+                renderInput={(params) => <TextField {...params} label="Token Merchant Accepts" variant="outlined" />}
               />
             </Grid>
           </Grid>
