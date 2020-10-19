@@ -14,3 +14,6 @@ Or run on other ports:
 yarn build
 yarn start --port 3001
 ```
+
+
+Load this URL in your browser: http://localhost:3003/?&accepts=DAI:400&accepts=WETH:2.5
