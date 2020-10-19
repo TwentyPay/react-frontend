@@ -17,6 +17,8 @@ import Grid from '@material-ui/core/Grid'
 import Container from '@material-ui/core/Container'
 import Autocomplete from '@material-ui/lab/Autocomplete'
 
+import { useRouter } from 'next/router'
+
 const useStyles = makeStyles({
   container: {
     display: 'flex',
@@ -27,7 +29,32 @@ const useStyles = makeStyles({
   }
 })
 
+function _isNumericString(s) {
+    return parseFloat(s) == s // XXX quickie
+}
 
+// pass in whole query object where .accepts is one member.
+// returns [] on error.
+// returns [{code: 'WETH', amount: 1.5}, {code: 'USDC', amount: 420.1}, ...]
+function _validateTokensMerchantAccepts(query) {
+  if (typeof query.accepts === 'undefined') {
+    console.log('missing accepts')
+    return []
+  }
+
+  if (query.accepts.filter(s => s.indexOf(':') == -1).length > 0) {
+    console.log('token:amount missing the :')
+    return []
+  }
+
+  let tokens = query.accepts.map(x => x.split(':'))
+  if (tokens.filter(x => ! _isNumericString(x[1])).length > 0) {
+    console.log(':amount was not numeric enough')
+    return []
+  }
+  tokens = tokens.map(t => ({ code: t[0], amount: parseFloat(t[1]) }))
+  return tokens
+}
 
 const Index = (props) => {
   const {
@@ -35,6 +62,9 @@ const Index = (props) => {
     increment,
     decrement
   } = props
+
+  const router = useRouter()
+  console.log(router.query)
 
   const Web3 = require('web3');
   var ethereum, web3; /* XXX */
@@ -45,6 +75,7 @@ const Index = (props) => {
 
   const classes = useStyles()
   const tokenOptions = [ { code: 'DAI' }, { code: 'UNI' }, { code: 'WETH' } ]
+  const merchantAccepts = _validateTokensMerchantAccepts(router.query)
 
   const componentDidMount = () => {
     ethereum = window.ethereum; /* XXX */
@@ -145,10 +176,10 @@ const Index = (props) => {
             <Grid item xs={3}>
               <Autocomplete
                 id="combo-box-demo"
-                options={tokenOptions}
+                options={merchantAccepts}
                 getOptionLabel={(option) => option.code}
                 style={{ width: 150 }}
-                renderInput={(params) => <TextField {...params} label="Pay Token" variant="outlined" />}
+                renderInput={(params) => <TextField {...params} label="Token Merchant Accepts" variant="outlined" />}
               />
             </Grid>
           </Grid>
