@@ -9,6 +9,7 @@ import RemoveIcon from '@material-ui/icons/Remove'
 import Typography from '@material-ui/core/Typography'
 import { connect } from 'react-redux'
 import { increment, decrement } from '../src/actions'
+import SwapContract from './swap-contract.js'
 
 import TextField from '@material-ui/core/TextField'
 import Button from '@material-ui/core/Button'
@@ -90,14 +91,14 @@ const Index = (props) => {
           setSenderBal(await web3.eth.getBalance(accounts[0]));
           setReceiverBal(await web3.eth.getBalance(receiver));
         });
-        
+
         // wrote this code in a reagular react app and was able to get the list of accepted 0x API tokens in console
         // Was unable to get this to show the list in this file, not sure how the index file is used
         // let usableTokens = []
         // const defaultOption = usableTokens[0];
         // var url = 'https://api.0x.org/swap/v1/tokens'
         // fetch(url).then((response) => response.json())
-        //           .then(function(data) { 
+        //           .then(function(data) {
         //             data.records.forEach(element => {
         //               usableTokens.push(element.symbol)
         //             })
@@ -117,6 +118,7 @@ const Index = (props) => {
       web3 = new Web3(ethereum);
     }
     if (web3) {
+      console.log('Web3 is enabled')
       await ethereum.enable()
       web3.eth.getAccounts((err, res) => {
         if (err) {
@@ -213,6 +215,7 @@ const Index = (props) => {
         <Grid container space={3}>
             <Grid item xs={6}>
                 <Button>Find optimal trade!</Button>
+                <SwapContract/>
             </Grid>
         </Grid>
         </form>
