@@ -12,7 +12,7 @@ function SwapContract() {
     // Need to hardcode this abi file in the frontend after contract changes
     const { abi: ABI } = require('../src/abi.json');
     const newArgs = {
-        deployedAddress: '0x7382949f535C1bb4D64059b934d4A63A11D3DAa2',
+        deployedAddress: '0x5721931aa166C5d3631a7715F9bE6BE3AE729333',
         sellAmount: '0.1'
     }
 
