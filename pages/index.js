@@ -53,6 +53,7 @@ function _validateTokensMerchantAccepts(query) {
     return []
   }
   tokens = tokens.map(t => ({ code: t[0], amount: parseFloat(t[1]) }))
+
   return tokens
 }
 
@@ -73,11 +74,14 @@ const Index = (props) => {
   const [receiverBal, setReceiverBal] = useState('');
 
   const classes = useStyles()
-  const tokenOptions = [ { code: 'DAI' }, { code: 'UNI' }, { code: 'WETH' } ]
+  const tokenOptions = [ { code: 'UNI' }, { code: 'WETH' }, { code: 'DAI' } ]
   const merchantAccepts = _validateTokensMerchantAccepts(router.query)
+  const payDescr = typeof router.query.payDescr === 'undefined' ? 'TwentyPay transaction' : router.query.payDescr
+  const merchantDescr = typeof router.query.merchantDescr === 'undefined' ? 'Unknown TwentyPay merchant' : router.query.merchantDescr
 
   const [chosenMerchantToken, setChosenMerchantToken] = useState('DAI')
   const [chosenMerchantTokenAmount, setChosenMerchantTokenAmount] = useState(0)
+
 
   const componentDidMount = () => {
     ethereum = window.ethereum; /* XXX */
@@ -94,6 +98,7 @@ const Index = (props) => {
         console.log("User denied account access");
       }
     });
+    setChosenMerchantTokenAmount(merchantAccepts[0].amount)
   }
 
   async function getAccount() {
@@ -137,13 +142,18 @@ const Index = (props) => {
       e.preventDefault()
       const sym = e.target.innerText
       setChosenMerchantToken(sym)
-      setChosenMerchantTokenAmount(merchantAccepts.find(x => x.code === sym).amount)
+      const codeAmount = merchantAccepts.find(x => x.code === sym)
+      if (codeAmount) {
+        setChosenMerchantTokenAmount(codeAmount.amount)
+      }
   }
 
 
   return (
     <Card className={classes.card}>
       <CardContent>
+        <Box color="text.primary">You are purchasing from: {merchantDescr}</Box>
+        <Box color="text.primary">Item description: {payDescr}</Box>
         <form className={classes.root} noValidate autoComplete="off">
          <Button color="secondary">Your address: {typeof address !== 'undefined' ? address : 'Connect Metamask'}</Button>
          <Button
@@ -156,19 +166,19 @@ const Index = (props) => {
          <Container>
           <Grid container space={3}>
             <Grid item xs={3}><TextField id="standard-basic" label="Amount" /></Grid>
-            <Grid item xs={3}>
-            <Button variant="contained" color="primary">
+            <Grid item xs={1}>
+              <Button variant="contained" color="primary">
                 DAI
-      <svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M0.97168 1L6.20532 6L11.439 1" stroke="#AEAEAE"></path></svg>
-            </Button>
+              </Button>
             </Grid>
             <Grid item xs={3}>
               <Autocomplete
                 id="combo-box-demo"
                 options={tokenOptions}
+                defaultValue={tokenOptions[0]}
                 getOptionLabel={(option) => option.code}
                 style={{ width: 250 }}
-                renderInput={(params) => <TextField {...params} label="Token box" variant="outlined" />}
+                renderInput={(params) => <TextField {...params} label="Spend Token" variant="outlined" />}
               />
             </Grid>
           </Grid>
@@ -177,15 +187,15 @@ const Index = (props) => {
          <Container>
           <Grid container space={3}>
             <Grid item xs={3}><TextField id="standard-basic" label="Receives" value={chosenMerchantTokenAmount} /></Grid>
-            <Grid item xs={3}>
-            <Button variant="contained" color="primary">
+            <Grid item xs={1}>
+              <Button variant="contained" color="primary">
                 {chosenMerchantToken}
-      <svg width="12" height="7" viewcontainer="0 0 12 7" fill="none" ><path d="M0.97168 1L6.20532 6L11.439 1" stroke="#AEAEAE"></path></svg>
-            </Button>
+              </Button>
             </Grid>
             <Grid item xs={3}>
               <Autocomplete
                 id="combo-box-demo"
+                defaultValue={merchantAccepts[0]}
                 options={merchantAccepts}
                 getOptionLabel={(option) => option.code}
                 getOptionSelected={(option, value) => option.code === value.code}
