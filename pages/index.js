@@ -43,6 +43,9 @@ function _validateTokensMerchantAccepts(query) {
     return []
   }
 
+  if (typeof query.accepts === 'string') {
+      query.accepts = [query.accepts]
+  }
   if (query.accepts.filter(s => s.indexOf(':') == -1).length > 0) {
     console.log('token:amount missing the :')
     return []
