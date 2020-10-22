@@ -67,92 +67,16 @@ const Index = (props) => {
 
   const router = useRouter()
 
-  const Web3 = require('web3');
-  var ethereum, web3; /* XXX */
-  const [address, setAddress] = useState('Not set');
-  const receiver = '0x8afB142655d14b2840489Aa512e798FC9deeFBC0';
-  const [senderBal, setSenderBal] = useState('');
-  const [receiverBal, setReceiverBal] = useState('');
-
   const classes = useStyles()
-  const tokenOptions = [ { code: 'UNI' }, { code: 'WETH' }, { code: 'DAI' } ]
+
+  const tokenOptions = [ { code: '0xBTC' }, { code: 'AION' }, { code: 'AMPL' }, { code: 'ANT' }, { code: 'AST' }, { code: 'BAL' }, { code: 'BAT' }, { code: 'BNT' }, { code: 'BOOTY' }, { code: 'BZRX' }, { code: 'CELR' }, { code: 'COMP' }, { code: 'CRV' }, { code: 'CVL' }, { code: 'DAI' }, { code: 'DGD' }, { code: 'DNT' }, { code: 'DTH' }, { code: 'ENJ' }, { code: 'ENTRP' }, { code: 'FOAM' }, { code: 'FUN' }, { code: 'GEN' }, { code: 'GNO' }, { code: 'GNT' }, { code: 'GST2' }, { code: 'GUSD' }, { code: 'ICN' }, { code: 'ICX' }, { code: 'KEEP' }, { code: 'KNC' }, { code: 'LEND' }, { code: 'LINK' }, { code: 'LOOM' }, { code: 'LPT' }, { code: 'LRC' }, { code: 'MANA' }, { code: 'MATIC' }, { code: 'MKR' }, { code: 'MLN' }, { code: 'NMR' }, { code: 'OMG' }, { code: 'PAX' }, { code: 'POWR' }, { code: 'RDN' }, { code: 'REN' }, { code: 'REP' }, { code: 'REQ' }, { code: 'RLC' }, { code: 'SAI' }, { code: 'SNT' }, { code: 'SNX' }, { code: 'SPANK' }, { code: 'STORJ' }, { code: 'SUSD' }, { code: 'SUSHI' }, { code: 'SWRV' }, { code: 'TUSD' }, { code: 'UBT' }, { code: 'UMA' }, { code: 'UNI' }, { code: 'USDC' }, { code: 'USDT' }, { code: 'WBTC' }, { code: 'WETH' }, { code: 'YFI' }, { code: 'ZIL' }, { code: 'ZRX' }, { code: 'bUSD' }, { code: 'cBAT' }, { code: 'cDAI' }, { code: 'cETH' }, { code: 'cREP' }, { code: 'cSAI' }, { code: 'cUSDC' }, { code: 'cZRX' }, { code: 'mUSD' }, { code: 'renBTC' }, { code: 'sBTC' }, { code: 'swUSD' }, { code: 'yDAI' }, { code: 'yTUSD' }, { code: 'yUSD' }, { code: 'yUSDC' }, { code: 'yUSDT' }, { code: 'ybCRV' } ]
+
   const merchantAccepts = _validateTokensMerchantAccepts(router.query)
   const payDescr = typeof router.query.payDescr === 'undefined' ? 'TwentyPay transaction' : router.query.payDescr
   const merchantDescr = typeof router.query.merchantDescr === 'undefined' ? 'Unknown TwentyPay merchant' : router.query.merchantDescr
 
   const [chosenMerchantToken, setChosenMerchantToken] = useState('DAI')
   const [chosenMerchantTokenAmount, setChosenMerchantTokenAmount] = useState(0)
-
-
-  const componentDidMount = () => {
-    ethereum = window.ethereum; /* XXX */
-    web3 = new Web3(ethereum);
-    window.addEventListener('load', async () => {
-      try {
-        ethereum.on('accountsChanged', async function (accounts) {
-          console.log("Account was changed!");
-          setAddress(accounts[0]);
-          setSenderBal(await web3.eth.getBalance(accounts[0]));
-          setReceiverBal(await web3.eth.getBalance(receiver));
-        });
-
-        // wrote this code in a reagular react app and was able to get the list of accepted 0x API tokens in console
-        // Was unable to get this to show the list in this file, not sure how the index file is used
-        // let usableTokens = []
-        // const defaultOption = usableTokens[0];
-        // var url = 'https://api.0x.org/swap/v1/tokens'
-        // fetch(url).then((response) => response.json())
-        //           .then(function(data) {
-        //             data.records.forEach(element => {
-        //               usableTokens.push(element.symbol)
-        //             })
-        //           console.log(usableTokens)})
-        //           .catch((error) => console.log(error));
-
-      } catch {
-        console.log("User denied account access");
-      }
-    });
-    setChosenMerchantTokenAmount(merchantAccepts[0].amount)
-  }
-
-  async function getAccount() {
-    /* XXX */
-    if (typeof web3 === 'undefined') {
-      ethereum = window.ethereum;
-      web3 = new Web3(ethereum);
-    }
-    if (web3) {
-      console.log('Web3 is enabled')
-      await ethereum.enable()
-      web3.eth.getAccounts((err, res) => {
-        if (err) {
-          console.log('getAccounts callback error: ', err);
-        } else {
-          const accounts = res;
-          console.log('is accounts defiined? ', accounts);
-          console.log('accounts[0] in getAccounts is ' + accounts[0])
-          if (typeof setAddress !== 'undefined') {
-            setAddress(accounts[0]);
-            console.log('address is now: ', address);
-            setSenderBal(web3.eth.getBalance(accounts[0]));
-            setReceiverBal(web3.eth.getBalance(receiver));
-          }
-        }
-      })
-    }
-  }
-  function sendETH() {
-      web3.eth.sendTransaction({
-        from: address,
-        to: receiver,
-        value: web3.utils.toHex(web3.utils.toWei('0.1')),
-      })
-      .then(async () => setSenderBal(await web3.eth.getBalance(address)))
-      .then(async () => setReceiverBal(await web3.eth.getBalance(receiver)))
-      .then((txHash) => console.log(txHash))
-      .catch((error) => console.error);
-  }
 
   function handleChangeAccepts(e) {
       e.preventDefault()
@@ -171,13 +95,6 @@ const Index = (props) => {
         <Box color="text.primary">You are purchasing from: {merchantDescr}</Box>
         <Box color="text.primary">Item description: {payDescr}</Box>
         <form className={classes.root} noValidate autoComplete="off">
-         <Button color="secondary">Your address: {typeof address !== 'undefined' ? address : 'Connect Metamask'}</Button>
-         <Button
-          className="enableEthereumButton"
-          onClick={getAccount}
-         >
-          Enable Ethereum
-         </Button>
 
          <Container>
           <Grid container space={3}>
@@ -211,7 +128,7 @@ const Index = (props) => {
             <Grid item xs={3}>
               <Autocomplete
                 id="combo-box-demo"
-                defaultValue={merchantAccepts[0]}
+                defaultValue={'DAI'}
                 options={merchantAccepts}
                 getOptionLabel={(option) => option.code}
                 getOptionSelected={(option, value) => option.code === value.code}
@@ -224,7 +141,6 @@ const Index = (props) => {
         </Container>
         <Grid container space={3}>
             <Grid item xs={6}>
-                <Button>Find optimal trade!</Button>
                 <SwapContract/>
             </Grid>
         </Grid>

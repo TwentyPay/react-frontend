@@ -247,17 +247,23 @@ function SwapContract() {
     return (
         <div>
             <Button
-                color="secondary"
                 className="setup"
                 onClick={setup}
             >
-                Setup
+                Get Quote
             </Button>
             <Button
+                color="secondary"
                 className="test0x"
                 onClick={awaitRun}
             >
-                Test 0x
+                Purchase
+            </Button>
+            <Button
+                className="setup"
+                onClick={setup}
+            >
+
             </Button>
         </div>
     )
