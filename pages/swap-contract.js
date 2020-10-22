@@ -1,6 +1,6 @@
 'use strict'
 require('colors');
-import Button from '@material-ui/core/Button'
+import Button from '@material-ui/core/Button';
 
 function SwapContract() {
     const fetch = require('node-fetch');
@@ -13,6 +13,7 @@ function SwapContract() {
     const { abi: ABI } = require('../src/abi.json');
     const erc20ABI = require('../src/erc20ABI.json');
     const tokenAddressUNI = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
+    const tokenAddressDAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
     const tokenHolderUNI = '0x69C5888Ecd21287FBdac5a43D1558Bf73c51E38B';
     const newArgs = {
         deployedAddress: '0x5721931aa166C5d3631a7715F9bE6BE3AE729333',
@@ -21,6 +22,12 @@ function SwapContract() {
         setupRoughSellAmount: '2',
         setupBuyAmount: '100'
     }
+    const Web3 = require('web3');
+    var owner = 'owner not set';
+    var merchant = '0xe083437A8FD52A9A4B6B3CAbec0279Db5dAD8043';
+    var ethereum = undefined;
+    var web3 = undefined;
+    var contract = undefined;
 
     async function setup() {
         try {
@@ -32,14 +39,49 @@ function SwapContract() {
         }
     }
 
+    async function getMetaMaskAccount() {
+        if (web3) {
+          console.log('Web3 is enabled');
+          await ethereum.enable();
+          await web3.eth.getAccounts((err, res) => {
+            if (err) {
+              console.log('getAccounts callback error: ', err);
+            } else {
+              const accounts = res;
+              console.log('is accounts defined? ', accounts);
+              console.log('accounts[0] in getAccounts is ' + accounts[0]);
+              owner = accounts[0];
+              console.log('owner is now: ', owner);
+            }
+          })
+      } else {
+          console.log("no web3 detected in getMetaMaskAccount function");
+      }
+    }
+
     async function getERC20Token(newArgs) {
-        const web3 = createWeb3()
-        const contract = new web3.eth.Contract(ABI, newArgs.deployedAddress);
+        ethereum = window.ethereum;
+        console.log('ethereum is ' + ethereum);
+        web3 = new Web3(ethereum);
+        console.log('web3 is ' + web3);
+        await getMetaMaskAccount()
+        window.addEventListener('load', async () => {
+          try {
+            ethereum.on('accountsChanged', async function (accounts) {
+              console.log("Account was changed!");
+              owner = accounts[0];
+            });
+            } catch {
+                console.log("User denied account access");
+            }
+        });
+        // const web3 = createWeb3()
+        contract = new web3.eth.Contract(ABI, newArgs.deployedAddress);
         console.log("0x contract assigned")
 
         // Checking our ETH account balance
-        const [owner] = await web3.eth.getAccounts();
-        console.log("owner account is " + owner)
+        // const [owner] = await web3.eth.getAccounts();
+        // console.log("owner account is " + owner)
         let ownerBal = weiToEther(parseInt(await web3.eth.getBalance(owner)));
         console.log("owner ETH account balance is " + ownerBal)
 
@@ -87,14 +129,14 @@ function SwapContract() {
         const boughtAmount = weiToEther(receipt.events.SwappedTokens.returnValues.boughtAmount);
         const soldAmount = weiToEther(receipt.events.SwappedTokens.returnValues.soldAmount);
         console.info(`${'✔'.bold.green} Successfully sold ${soldAmount} WETH for ${boughtAmount} UNI!`);
-        console.log(`We asked for ${newArgs.setupBuyAmount} tokens originally`)
+        console.log(`We asked for ${newArgs.setupBuyAmount} tokens originally`);
 
         // Get UNI balance in contract
         const contractUNI = new web3.eth.Contract(erc20ABI, tokenAddressUNI);
         contractUNI.methods.balanceOf(newArgs.deployedAddress).call((error, balance) => {
                 console.log(`Contract now has ${balance.toString()} UNI`);
         });
-        console.log(`We are asking for ${newArgs.setupBuyAmount} UNI`)
+        console.log(`We are asking for ${newArgs.setupBuyAmount} UNI`);
 
         await waitForTxSuccess(contract.methods.withdrawToken(
             quote.buyTokenAddress,
@@ -120,12 +162,12 @@ function SwapContract() {
     }
 
     async function run(newArgs) {
-        const web3 = createWeb3()
-        const contract = new web3.eth.Contract(ABI, newArgs.deployedAddress);
-        console.log("0x contract assigned")
+        // const web3 = createWeb3()
+        // const contract = new web3.eth.Contract(ABI, newArgs.deployedAddress);
 
-        const [owner] = await web3.eth.getAccounts();
-        console.log("owner account is " + owner)
+        // const [owner, merchant] = await web3.eth.getAccounts();
+        // console.log("owner account is " + owner);
+        // console.log("merchant account is " + merchant);
 
         // Convert roughSellAmount and buyAmount from token units to wei.
         const roughSellAmountWei = etherToWei(newArgs.roughSellAmount);
@@ -140,6 +182,12 @@ function SwapContract() {
             value: roughSellAmountWei,
             from: owner,
         }));
+
+        // Check DAI balance of our account
+        const contractDAI = new web3.eth.Contract(erc20ABI, tokenAddressDAI);
+        contractDAI.methods.balanceOf(merchant).call((error, balance) => {
+                console.log(`Merchant address before swap has ${balance.toString()} DAI`);
+        });
 
         // Get a quote from 0x-API to sell the UNI we just deposited into the contract.
         console.log(`Fetching swap quote from 0x-API to buy ${newArgs.buyAmount} DAI for UNI...`);
@@ -160,7 +208,7 @@ function SwapContract() {
 
         // Have the contract fill the quote, selling its own WETH.
         console.info(`Filling the quote through the contract at ${newArgs.deployedAddress.bold}...`);
-        const receipt = await waitForTxSuccess(contract.methods.fillQuote(
+        const receipt = await waitForTxSuccess(contract.methods.fillMerchantQuote(
                 quote.sellTokenAddress,
                 quote.buyTokenAddress,
                 quote.allowanceTarget,
@@ -175,8 +223,25 @@ function SwapContract() {
         const boughtAmount = weiToEther(receipt.events.SwappedTokens.returnValues.boughtAmount);
         const soldAmount = weiToEther(receipt.events.SwappedTokens.returnValues.soldAmount);
         console.info(`${'✔'.bold.green} Successfully sold ${soldAmount} UNI for ${boughtAmount} DAI!`);
-        console.log(`We asked for ${newArgs.buyAmount} tokens originally`)
+        console.log(`We asked for ${newArgs.buyAmount} tokens originally`);
         // console.log("Success!!!")
+
+        // Get DAI balance in contract
+        contractDAI.methods.balanceOf(newArgs.deployedAddress).call((error, balance) => {
+                console.log(`Contract now has ${balance.toString()} DAI`);
+        });
+
+        // await waitForTxSuccess(contract.methods.withdrawToken(
+        //     quote.buyTokenAddress,
+        //     buyAmountWei,
+        // ).send({
+        //     from: merchant,
+        // }));
+
+        // Check DAI balance of our account
+        contractDAI.methods.balanceOf(merchant).call((error, balance) => {
+                console.log(`Merchant address now has ${balance.toString()} DAI`);
+        });
     }
 
     return (
