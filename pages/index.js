@@ -72,6 +72,7 @@ const Index = (props) => {
 
   const classes = useStyles()
 
+  const spendTokenPlaceholder = [ { code: 'Select Token'} ]
   const tokenOptions = [ { code: '0xBTC' }, { code: 'AION' }, { code: 'AMPL' }, { code: 'ANT' }, { code: 'AST' }, { code: 'BAL' }, { code: 'BAT' }, { code: 'BNT' }, { code: 'BOOTY' }, { code: 'BZRX' }, { code: 'CELR' }, { code: 'COMP' }, { code: 'CRV' }, { code: 'CVL' }, { code: 'DAI' }, { code: 'DGD' }, { code: 'DNT' }, { code: 'DTH' }, { code: 'ENJ' }, { code: 'ENTRP' }, { code: 'FOAM' }, { code: 'FUN' }, { code: 'GEN' }, { code: 'GNO' }, { code: 'GNT' }, { code: 'GST2' }, { code: 'GUSD' }, { code: 'ICN' }, { code: 'ICX' }, { code: 'KEEP' }, { code: 'KNC' }, { code: 'LEND' }, { code: 'LINK' }, { code: 'LOOM' }, { code: 'LPT' }, { code: 'LRC' }, { code: 'MANA' }, { code: 'MATIC' }, { code: 'MKR' }, { code: 'MLN' }, { code: 'NMR' }, { code: 'OMG' }, { code: 'PAX' }, { code: 'POWR' }, { code: 'RDN' }, { code: 'REN' }, { code: 'REP' }, { code: 'REQ' }, { code: 'RLC' }, { code: 'SAI' }, { code: 'SNT' }, { code: 'SNX' }, { code: 'SPANK' }, { code: 'STORJ' }, { code: 'SUSD' }, { code: 'SUSHI' }, { code: 'SWRV' }, { code: 'TUSD' }, { code: 'UBT' }, { code: 'UMA' }, { code: 'UNI' }, { code: 'USDC' }, { code: 'USDT' }, { code: 'WBTC' }, { code: 'WETH' }, { code: 'YFI' }, { code: 'ZIL' }, { code: 'ZRX' }, { code: 'bUSD' }, { code: 'cBAT' }, { code: 'cDAI' }, { code: 'cETH' }, { code: 'cREP' }, { code: 'cSAI' }, { code: 'cUSDC' }, { code: 'cZRX' }, { code: 'mUSD' }, { code: 'renBTC' }, { code: 'sBTC' }, { code: 'swUSD' }, { code: 'yDAI' }, { code: 'yTUSD' }, { code: 'yUSD' }, { code: 'yUSDC' }, { code: 'yUSDT' }, { code: 'ybCRV' } ]
 
   const merchantAccepts = _validateTokensMerchantAccepts(router.query)
@@ -79,7 +80,8 @@ const Index = (props) => {
   const merchantDescr = typeof router.query.merchantDescr === 'undefined' ? 'Unknown TwentyPay merchant' : router.query.merchantDescr
 
   const [chosenMerchantToken, setChosenMerchantToken] = useState('DAI')
-  const [chosenMerchantTokenAmount, setChosenMerchantTokenAmount] = useState(0)
+  const [chosenMerchantTokenAmount, setChosenMerchantTokenAmount] = useState(5)
+  const [quoteValue, setQuoteValue] = useState("")
 
   function handleChangeAccepts(e) {
       e.preventDefault()
@@ -91,6 +93,27 @@ const Index = (props) => {
       }
   }
 
+  async function getQuote() {
+      console.log("getQuote runs");
+      const { etherToWei, createQueryString } = require('../src/utils/swapUtils.js');
+      const API_QUOTE_URL = 'https://api.0x.org/swap/v1/quote';
+      // Get a quote from 0x-API for the purchase.
+      console.log(`Fetching swap quote from 0x-API to buy ${chosenMerchantTokenAmount} DAI for UNI...`);
+      const merchantTokenAmountWei = etherToWei(chosenMerchantTokenAmount);
+      const qs = createQueryString({
+          sellToken: 'UNI',
+          buyToken: 'DAI',
+          buyAmount: merchantTokenAmountWei,
+      });
+      const quoteUrl = `${API_QUOTE_URL}?${qs}`;
+      console.info(`Fetching quote ${quoteUrl}...`);
+      const response = await fetch(quoteUrl);
+      const quote = await response.json();
+      console.info(`Received a quote with price ${quote.price}`);
+      const quoteValue = (quote.price * chosenMerchantTokenAmount).toFixed(2);
+      setQuoteValue(quoteValue);
+  }
+
 
   return (
     <Card className={classes.card}>
@@ -99,21 +122,19 @@ const Index = (props) => {
         <Box color="text.primary">Item description: {payDescr}</Box>
         <form className={classes.root} noValidate autoComplete="off">
 
-         <Container>
+         <Container
+          style={{marginTop: "20px"}}
+         >
           <Grid container space={3}>
-            <Grid item xs={3}><TextField id="standard-basic" label="Amount" /></Grid>
-            <Grid item xs={1}>
-              <Button variant="contained" color="primary">
-                DAI
-              </Button>
-            </Grid>
+            <Grid item xs={3}><TextField id="standard-basic" label="Amount" value={quoteValue} /></Grid>
             <Grid item xs={3}>
               <Autocomplete
                 id="combo-box-demo"
                 options={tokenOptions}
-                defaultValue={tokenOptions[0]}
+                defaultValue={spendTokenPlaceholder[0]}
                 getOptionLabel={(option) => option.code}
-                style={{ width: 250 }}
+                onChange={getQuote}
+                style={{ width: 250, padding: "10px" }}
                 renderInput={(params) => <TextField {...params} label="Spend Token" variant="outlined" />}
               />
             </Grid>
@@ -123,27 +144,22 @@ const Index = (props) => {
          <Container>
           <Grid container space={3}>
             <Grid item xs={3}><TextField id="standard-basic" label="Receives" value={chosenMerchantTokenAmount} /></Grid>
-            <Grid item xs={1}>
-              <Button variant="contained" color="primary">
-                {chosenMerchantToken}
-              </Button>
-            </Grid>
             <Grid item xs={3}>
               <Autocomplete
                 id="combo-box-demo"
-                defaultValue={'DAI'}
+                defaultValue={merchantAccepts[0]}
                 options={merchantAccepts}
                 getOptionLabel={(option) => option.code}
                 getOptionSelected={(option, value) => option.code === value.code}
                 onChange={handleChangeAccepts}
-                style={{ width: 250 }}
+                style={{ width: 250, padding: "10px" }}
                 renderInput={(params) => <TextField {...params} label="Token Merchant Accepts" variant="outlined" />}
               />
             </Grid>
           </Grid>
         </Container>
         <Grid container space={3}>
-            <Grid item xs={6}>
+            <Grid item xs={3}>
                 <SwapContract/>
             </Grid>
         </Grid>
